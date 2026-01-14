@@ -7,9 +7,7 @@ import (
 	"strings"
 )
 
-func GetTSV(config Config) string {
-	mods := GetAllMods(config)
-
+func GetTSV(mods []*Mod) string {
 	mods_csv := [][]string{}
 	for _, mod := range mods {
 		mods_csv = append(mods_csv, mod.TSVInfo())

@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/urfave/cli/v3"
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
-
-	"github.com/urfave/cli/v3"
+	"strings"
 )
 
 func CmdVanilla(context.Context, *cli.Command) error {
@@ -21,12 +22,13 @@ func CmdVanilla(context.Context, *cli.Command) error {
 }
 func CmdTsv(context.Context, *cli.Command) error {
 	config := LoadConfig()
-	fmt.Println(GetTSV(config))
+	mods := GetAllMods(config)
+	fmt.Println(GetTSV(mods))
 	return nil
 }
 func CmdLoad(context.Context, *cli.Command) error {
 	config := LoadConfig()
-	filename := "listpaths.tsv"
+	filename := "list.tsv"
 
 	mods, err := GetModsFromPath(filename, config)
 	if err != nil {
@@ -35,9 +37,39 @@ func CmdLoad(context.Context, *cli.Command) error {
 
 	return LoadModlist(mods, config)
 }
+
+func CmdGetDeps(ctx context.Context, cmd *cli.Command) error {
+	config := LoadConfig()
+	filename := "list.tsv"
+	arg := cmd.Args().Slice()
+	if len(arg) < 1 {
+		return fmt.Errorf("GetDeps must be called with a packageid")
+	}
+	pid := PackageID(strings.ToLower(arg[0]))
+
+	mods, err := GetModsFromPath(filename, config)
+	if err != nil {
+		return err
+	}
+	LinkMods(mods)
+	for _, mod := range mods {
+		depGroups := mod.Deps
+		for _, group := range depGroups {
+			if !slices.Contains(group, pid) {
+				continue
+			}
+			if len(group) == 1 {
+				fmt.Printf("%s strict dependency\n", mod)
+				continue
+			}
+			fmt.Printf("%s depends but has alternative: %v\n", mod, group)
+		}
+	}
+	return nil
+}
 func CmdMarkdown(context.Context, *cli.Command) error {
 	config := LoadConfig()
-	filename := "listpaths.tsv"
+	filename := "list.tsv"
 
 	mods, err := GetModsFromPath(filename, config)
 	if err != nil {
@@ -63,7 +95,7 @@ func CmdToddsEncode(context.Context, *cli.Command) error {
 }
 func CmdSteam(context.Context, *cli.Command) error {
 	config := LoadConfig()
-	filename := "listpaths.tsv"
+	filename := "list.tsv"
 
 	mods, err := GetModsFromPath(filename, config)
 	if err != nil {
@@ -131,21 +163,34 @@ func main() {
 			Usage:  "markdown export",
 			Action: CmdMarkdown,
 		}, {
-			Name:   "encode_clean",
-			Usage:  "Todds encode clean",
-			Action: CmdToddsClean,
-		}, {
-			Name:   "encode",
-			Usage:  "Todds encode",
-			Action: CmdToddsEncode,
+			Name:  "dds",
+			Usage: "tools for DDS encoding and cleaning",
+			Commands: []*cli.Command{
+				{
+					Name:   "clean",
+					Usage:  "Todds encode clean",
+					Action: CmdToddsClean,
+				}, {
+					Name:   "encode",
+					Usage:  "Todds encode",
+					Action: CmdToddsEncode,
+				},
+			},
 		}, {
 			Name:   "install",
 			Usage:  "SteamCMD install",
 			Action: CmdInstall,
+		}, {
+			Name:   "getdeps",
+			Usage:  "Find dependents of a PID",
+			Action: CmdGetDeps,
 		},
 	}
 
-	cmd := &cli.Command{Commands: commands}
+	cmd := &cli.Command{
+		Commands:              commands,
+		EnableShellCompletion: true,
+	}
 	if err := cmd.Run(context.Background(), os.Args); err != nil {
 		log.Fatal(err)
 	}

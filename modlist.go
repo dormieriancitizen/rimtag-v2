@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/xml"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type ModConfig struct {
@@ -75,12 +75,25 @@ func LoadModlist(mods []*Mod, config Config) error {
 }
 
 func GetModsFromPath(path string, config Config) ([]*Mod, error) {
-	data, err := os.ReadFile(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	var lines []string
 
-	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	// lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	for {
+		record, err := reader.Read()
+		if err != nil {
+			break
+		}
+		if len(record) >= 4 {
+			lines = append(lines, record[3])
+		}
+	}
 
 	paths := make(map[string]struct{})
 	mods := make([]*Mod, 0, len(lines))
