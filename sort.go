@@ -37,25 +37,23 @@ func CheckDeps(mods []*Mod, config Config) error {
 		modsByPid[mod.PackageID] = mod
 	}
 	missing := false
-ModLoop:
 	for _, mod := range mods {
-		supported := false
-		for _, modsupport := range mod.About.SupportedVersions {
-			if modsupport == version {
-				supported = true
-			}
-		}
+		supported := slices.Contains(mod.About.SupportedVersions, version)
 		if !supported {
 			if string(mod.PackageID) != "ludeon.rimworld" {
 				fmt.Printf("Mod has wrong version %s\n", mod)
 			}
 		}
-		for _, deps := range mod.Deps {
-			for _, dep := range deps {
+		for _, group := range mod.Deps {
+			groupSatisfied := false
+			for _, dep := range group {
 				if _, ok := modsByPid[dep]; ok {
-					continue ModLoop
+					groupSatisfied = true
+					break
 				}
-				fmt.Printf("Missing required dependency %s\n", dep)
+			}
+			if !groupSatisfied {
+				fmt.Printf("Missing required dependency for %s: one of %v\n", mod, group)
 				missing = true
 			}
 		}

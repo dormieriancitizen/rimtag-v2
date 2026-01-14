@@ -41,3 +41,24 @@ func ToddsEncode(config Config) error {
 	}
 	return nil
 }
+
+func ToddsEncodeMods(mods []*Mod) error {
+	toEncode := []string{}
+	for _, mod := range mods {
+		toEncode = append(toEncode, mod.Path)
+	}
+	for _, path := range toEncode {
+		cmd := exec.Command("todds", "-f", "BC1", "-v", "-p", "-af", "BC7", "-on", "-vf", "-fs", "-r", "Textures", "-t", path)
+		cmd.Stderr = os.Stderr
+		cmd.Stdout = os.Stdout
+		err := cmd.Run()
+		if err != nil {
+			if exitErr, ok := err.(*exec.ExitError); ok {
+				return (fmt.Errorf("todds exited with code %d\n", exitErr.ExitCode()))
+			} else {
+				return (fmt.Errorf("failed to run todds: %v\n", err))
+			}
+		}
+	}
+	return nil
+}

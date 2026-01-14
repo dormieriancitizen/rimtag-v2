@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -81,9 +82,15 @@ func GetModsFromPath(path string, config Config) ([]*Mod, error) {
 
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 
+	paths := make(map[string]struct{})
 	mods := make([]*Mod, 0, len(lines))
+
 	for i, path := range lines {
 		if path == "" {
+			continue
+		}
+		if _, ok := paths[path]; ok {
+			fmt.Printf("Duplicate path %s, skipping\n", path)
 			continue
 		}
 
