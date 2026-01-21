@@ -172,7 +172,7 @@ func GetSteamInfo(ids []SteamID) (map[SteamID]SteamInfo, error) {
 	return result, nil
 }
 
-func GetSteamInfoCached(ids []SteamID) (map[SteamID]SteamInfo, error) {
+func GetSteamInfoCached(ids []SteamID, clean bool) (map[SteamID]SteamInfo, error) {
 	cache, err := loadSteamCache()
 	if err != nil {
 		return nil, err
@@ -180,7 +180,7 @@ func GetSteamInfoCached(ids []SteamID) (map[SteamID]SteamInfo, error) {
 
 	var missing []SteamID
 	for _, id := range ids {
-		if _, ok := cache[id]; !ok {
+		if _, ok := cache[id]; !ok || clean {
 			missing = append(missing, id)
 		}
 	}
@@ -208,7 +208,7 @@ func GetSteamInfoCached(ids []SteamID) (map[SteamID]SteamInfo, error) {
 	return result, nil
 }
 
-func AddSteamInfo(mods []*Mod) {
+func AddSteamInfo(mods []*Mod, clean bool) {
 	modsBySteamAppId := map[SteamID]*Mod{}
 	ids := []SteamID{}
 	for _, mod := range mods {
@@ -218,7 +218,7 @@ func AddSteamInfo(mods []*Mod) {
 			modsBySteamAppId[appId] = mod
 		}
 	}
-	modSteamInfo, err := GetSteamInfoCached(ids)
+	modSteamInfo, err := GetSteamInfoCached(ids, clean)
 	if err != nil {
 		return
 	}

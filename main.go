@@ -76,7 +76,7 @@ func CmdMarkdown(context.Context, *cli.Command) error {
 		return err
 	}
 	LinkMods(mods)
-	AddSteamInfo(mods)
+	AddSteamInfo(mods, false)
 	sortedMods, err := SortMods(mods)
 	if err != nil {
 		return err
@@ -102,7 +102,7 @@ func CmdSteam(context.Context, *cli.Command) error {
 		return err
 	}
 	LinkMods(mods)
-	AddSteamInfo(mods)
+	AddSteamInfo(mods, false)
 	return nil
 }
 
@@ -136,6 +136,12 @@ func CmdCheck(context.Context, *cli.Command) error {
 		// }
 	}
 
+	return nil
+}
+func CmdUpdate(context.Context, *cli.Command) error {
+	config := LoadConfig()
+	mods := GetAllMods(config)
+	AddSteamInfo(mods, false)
 	return nil
 }
 
@@ -184,6 +190,10 @@ func main() {
 			Name:   "getdeps",
 			Usage:  "Find dependents of a PID",
 			Action: CmdGetDeps,
+		}, {
+			Name:   "update",
+			Usage:  "update cache",
+			Action: CmdUpdate,
 		},
 	}
 

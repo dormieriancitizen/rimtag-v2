@@ -16,7 +16,7 @@ type Config struct {
 	TargetDir    string `toml:"target-dir" comment:"Rimworld path"`
 }
 
-func getConfigPath() string {
+func GetConfigPath() string {
 	configHome := os.Getenv("XDG_CONFIG_HOME")
 	if configHome == "" {
 		homeDir, err := os.UserHomeDir()
@@ -30,7 +30,7 @@ func getConfigPath() string {
 }
 
 func LoadConfig() Config {
-	configRoot := getConfigPath()
+	configRoot := GetConfigPath()
 	configPath := filepath.Join(configRoot, "config.toml")
 	data, err := os.ReadFile(configPath)
 
