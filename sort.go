@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+var LateLoaders = []string{"vr.missilegirl", "taranchuk.performanceoptimizer"}
+var EarlyLoaders = []string{}
+
 func LinkMods(mods []*Mod) {
 	modsByPid := map[PackageID]*Mod{}
 	for _, mod := range mods {
@@ -115,7 +118,8 @@ func findCycle(graph map[*Mod][]*Mod) []*Mod {
 
 	return cycle
 }
-func SortMods(mods []*Mod) ([]*Mod, error) {
+
+func SortLayer(mods []*Mod) ([]*Mod, error) {
 	indegree := make(map[*Mod]int)
 	graph := make(map[*Mod][]*Mod)
 
@@ -178,4 +182,43 @@ func SortMods(mods []*Mod) ([]*Mod, error) {
 	}
 
 	return result, nil
+}
+
+func SortMods(mods []*Mod) ([]*Mod, error) {
+	early := []*Mod{}
+	mid := make([]*Mod, 0, len(mods))
+	late := []*Mod{}
+
+	for _, mod := range mods {
+		if slices.Contains(EarlyLoaders, string(mod.PackageID)) {
+			early = append(early, mod)
+			continue
+		}
+		if slices.Contains(LateLoaders, string(mod.PackageID)) {
+			late = append(late, mod)
+			continue
+		}
+		mid = append(mid, mod)
+	}
+
+	sorted := make([]*Mod, 0, len(mods))
+
+	earlySorted, err := SortLayer(early)
+	if err != nil {
+		return nil, err
+	}
+	midSorted, err := SortLayer(mid)
+	if err != nil {
+		return nil, err
+	}
+	lateSorted, err := SortLayer(late)
+	if err != nil {
+		return nil, err
+	}
+
+	sorted = append(sorted, earlySorted...)
+	sorted = append(sorted, midSorted...)
+	sorted = append(sorted, lateSorted...)
+
+	return sorted, nil
 }
